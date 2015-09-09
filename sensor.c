@@ -2,8 +2,15 @@
 #include <stdlib.h>
 #include "sensor.h"
 
+int xsamples[32];
+int i;
 void handle_line(char *line) {
-  printf("%s", line);
+  for (i = 0; i < sizeof(xsamples); ++i)
+  {
+      xsamples[i] = xsamples[i+1];
+  }
+  xsamples[sizeof(xsamples)-1] = (int)line;
+  printf("%d\n",xsamples[sizeof(xsamples)-1]);
 }
 
 int getNextData()
@@ -13,7 +20,7 @@ int getNextData()
     int c;
     char *buffer = (char *)malloc(size);
 
-    FILE *samples = fopen("ECG.txt", "r");
+    FILE *samples = fopen("ECG1.txt", "r");
     if(samples) {
       do { // read all lines in file
         pos = 0;
