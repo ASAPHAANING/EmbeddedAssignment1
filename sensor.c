@@ -5,16 +5,17 @@
 
 int lpf[3];
 int hpf[2];
-int xsamples[32];
+int xsamples[13];
+int lptemp[33];
 
 int i;
 void handle_line(int line) 
 {
-  for (i = 0; i < 32; ++i)
+  for (i = 0; i < 12; ++i)
   {
       xsamples[i] = xsamples[i+1];
   }
-  xsamples[31] = line;
+  xsamples[12] = line;
   lowPassFilter();
 }
 
@@ -22,7 +23,7 @@ int getNextData()
 {
 
 
-      FILE *samples = fopen("ECG1.txt", "r");
+      FILE *samples = fopen("ECG.txt", "r");
       int buffer;
       while(fscanf(samples,"%i",&buffer) != EOF)
       {
@@ -34,12 +35,25 @@ int getNextData()
 
 void lowPassFilter()
 {
-  lpf[3-1]=2 * lpf[3-2]-lpf[3-3]+(((xsamples[32-1]-(2 * xsamples[32-7])+xsamples[32-13]))/32);
+  lpf[3-1]=2 * lpf[3-2]-lpf[3-3]+(((xsamples[12]-(2 * xsamples[12-6])+xsamples[12-12]))/32);
   for (i = 0; i < 2; ++i)
   {
       lpf[i] = lpf[i+1];
   }
-  printf("%i\n",lpf[2]);
+  highPassFilter(lpf[2]);
+}
+
+void highPassFilter(int pos)
+{
+  for (i = 0; i < 32; ++i)
+  {
+      lptemp[i] = lptemp[i+1];
+  }
+  lptemp[32] = pos;
+
+  hpf[1] = hpf[1-1] - lptemp[32]/32+lptemp[32-16]-lptemp[32-17] + lptemp[32-32] / 32;
+  hpf[0] = hpf[1];
+  printf("%i\n", hpf[1]);
 }
 
 int main()
