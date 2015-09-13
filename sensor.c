@@ -76,8 +76,8 @@ void highPassFilter(int pos)
 
   lptemp[32] = pos;
 
-  hpf[1] = hpf[1-1] - lptemp[32]/32+lptemp[32-16]-lptemp[32-17] + lptemp[32-32] / 32;
-  hpf[0] = hpf[1];
+  hpf[1]     = hpf[1-1] - lptemp[32]/32+lptemp[32-16]-lptemp[32-17] + lptemp[32-32] / 32;
+  hpf[0]     = hpf[1];
   //printf("%i\n", hpf[1]);
   derivativeFilter(hpf[1]);
 }
@@ -95,7 +95,7 @@ void derivativeFilter(int pos)
       hptemp[i] = hptemp[i+1];
   }
 
-  hptemp[4] = pos;
+  hptemp[4]  = pos;
 
   derivative = (2*hptemp[4]+hptemp[4-1]-hptemp[4-3]-2*hptemp[4-4])/8;
 
