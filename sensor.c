@@ -9,7 +9,7 @@ int xsamples[13];
 int lptemp[33];
 
 int i;
-void handle_line(int line) 
+void handle_line(int line)
 {
   for (i = 0; i < 12; ++i)
   {
@@ -22,7 +22,6 @@ void handle_line(int line)
 int getNextData()
 {
 
-
       FILE *samples = fopen("ECG.txt", "r");
       int buffer;
       while(fscanf(samples,"%i",&buffer) != EOF)
@@ -30,7 +29,7 @@ int getNextData()
       handle_line(buffer);
       }
 
-	return 0;
+ 	return 0;
 }
 
 void lowPassFilter()
@@ -59,6 +58,6 @@ void highPassFilter(int pos)
 int main()
 {
 	getNextData();
- 
+
 	return 0;
 }
