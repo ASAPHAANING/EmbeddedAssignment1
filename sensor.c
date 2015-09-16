@@ -37,9 +37,3 @@ int getNextData()
       }
   	return 0;
 }
-
-int main()
-{
-	getNextData();
- 	return 0;
-}
