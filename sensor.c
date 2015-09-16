@@ -6,7 +6,7 @@
 int i;
 
 int xsamples[13];
-int *samp = &xsamples;
+int *samp = xsamples;
 
 /**
  * [handle_line refer to getNextData]

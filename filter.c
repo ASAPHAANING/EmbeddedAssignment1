@@ -12,6 +12,10 @@
   // For loop compiler issues
   int i;
 
+  void highPassFilter(int pos);
+  void derivativeFilter(int pos);
+  void squareShit(int result);
+  void movingWindowIntegration(int pos);
   /**
    * [lowPassFilter applies a low pass filter to the original signal one data point at a time.
    * The formula is set to cut the frequencies at around 20Hz and above]
@@ -90,6 +94,6 @@
 
     }
     mwi /= 30;
-    printf("%i\n", mwi);
+    //printf("%i\n", mwi);
     mwi = 0;
   }
