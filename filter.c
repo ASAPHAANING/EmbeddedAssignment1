@@ -49,7 +49,7 @@ void highPassFilter(int pos)
 
   hpf[1]     = hpf[1-1] - lptemp[32]/32+lptemp[32-16]-lptemp[32-17] + lptemp[32-32] / 32;
   hpf[0]     = hpf[1];
-//printf("%i\n", hpf[1]);
+  //printf("%i\n", hpf[1]);
   derivativeFilter(hpf[1]);
 }
 
