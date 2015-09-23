@@ -2,8 +2,8 @@
 #include <stdlib.h>
 
 int compare[3];
-int peak[],Rpeak[];
-int index = 0;
+static int peak[8],Rpeak[8];
+static int index = 0;
 int divideCount = 0;
 int rising = 0;
 int RpeakCount = 0;
@@ -38,6 +38,10 @@ void findPeak(int filtervalue)
 		//printf("%i \n", peak[index]);
 		findRPeak();
 		index++;
+		if (index > 7)
+		{
+			index = 0;
+		}
 	}
 }
 void findRPeak ()
