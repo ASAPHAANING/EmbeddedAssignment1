@@ -4,6 +4,7 @@
 int compare[3];
 static int peak[8],Rpeak[8];
 static int index = 0;
+static int indexR = 0;
 int divideCount = 0;
 int rising = 0;
 int RpeakCount = 0;
@@ -12,8 +13,11 @@ int RRaverage1 = 0;
 int RRaverage2 = 0;
 int SPKF = 0;
 int NPKF = 0;
-int RRlow, RRhigh, RRmiss;
+int RRlow = 0;
+int RRhigh = 300;
+int RRmiss;
 int threshold1 = 2000;
+int threshold2 = 1000;
 int RRvalues[8] = {0,0,0,0,0,0,0,0};
 
 void findPeak(int filtervalue)
@@ -37,8 +41,7 @@ void findPeak(int filtervalue)
 		peak[index] = compare[1];
 		//printf("%i \n", peak[index]);
 		findRPeak();
-		index++;
-		if (index > 7)
+		if (++index > 7)
 		{
 			index = 0;
 		}
@@ -46,7 +49,7 @@ void findPeak(int filtervalue)
 }
 void findRPeak ()
 {
-	if (peak[index] > threshold1 && RRcount > 50)
+	if (peak[index] > threshold1 /*&& RRcount > 50*/)
 	{
 		//printf("%i\n", peak[index]);
 		for (i = 0; i < 7; ++i)
@@ -56,12 +59,14 @@ void findRPeak ()
 		RRvalues[7] = RRcount;
 		// Fucker lidt.
 		//printf("%i\n",RRcount);
-		for (i = 0; i < 8; ++i)
+		
+
+		if (RRcount < RRhigh && RRcount > RRlow){
+			
+			for (i = 0; i < 8; ++i)
 		{
 			//printf("%i\n", RRvalues[i]);
 			RRaverage2 += RRvalues[i];
-			
-
 		}
 		divideCount +=1;
 
@@ -74,22 +79,31 @@ void findRPeak ()
 		{
 			RRaverage2 /= 8;	
 		}
-		printf("%i\n", peak[index]);
+		
+		Rpeak[indexR] = peak[index];
+		printf("%i %i\n", RRcount, Rpeak[indexR] );
+		if (++indexR > 7)
+		{
+			indexR = 0;
+		}
 		RRlow = RRaverage2*92/100;
 		RRmiss = RRaverage2*166/100;
 		RRhigh = RRaverage2*116/100;
+		threshold1 = NPKF + 0.25 *(SPKF - NPKF);
+		threshold2 = 0.5*threshold1;
+		SPKF = 0.125 * peak[index] + 0.875 * SPKF;
 		
-		printf("%i\n",RRmiss );
-		printf("%i\n", peak[index]);
-
-		if (RRcount < RRhigh && RRcount > RRlow){
-			Rpeak[RRcount] = peak[index];
-			//printf("%i\n", peak[index]);
 			//ŔpeakCount += 1;
 		}
 		RRaverage2 = 0;
 		RRcount = 0;
-	}
 
+	}
+	else {
+		NPKF = 0.125*peak[index]+0.875*NPKF;
+		threshold1 = NPKF + 0.25 *(SPKF - NPKF);
+		threshold2 = 0.5*threshold1;
+	}
+ 
 }
 
