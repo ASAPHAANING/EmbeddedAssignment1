@@ -10,8 +10,10 @@ int RpeakCount = 0;
 int i, j, RRcount;
 int RRaverage1 = 0;
 int RRaverage2 = 0;
+int SPKF = 0;
+int NPKF = 0;
 int RRlow, RRhigh, RRmiss;
-int threshold1 = 3000;
+int threshold1 = 2000;
 int RRvalues[8] = {0,0,0,0,0,0,0,0};
 
 void findPeak(int filtervalue)
@@ -23,7 +25,7 @@ void findPeak(int filtervalue)
 	}
 	compare[2] = filtervalue;
 
-	if(rising == 0 && compare[1] > compare[0])
+	if(rising == 0 && compare[1] > compare[0])// ser om vi stiger i værdi
 	{
 		rising = 1;
 	}
@@ -33,7 +35,7 @@ void findPeak(int filtervalue)
 	{
 		rising = 0;
 		peak[index] = compare[1];
-		//printf("%i %i\n", index, peak[index]);
+		//printf("%i \n", peak[index]);
 		findRPeak();
 		index++;
 	}
@@ -61,17 +63,19 @@ void findRPeak ()
 
 		if(divideCount<8)
 		{	
-			RRaverage2/=divideCount;
+			RRaverage2 /= divideCount;
 
 		}
 		else
 		{
-		RRaverage2 /= 8;	
+			RRaverage2 /= 8;	
 		}
 		printf("%i\n", peak[index]);
 		RRlow = RRaverage2*92/100;
-		RRhigh = RRaverage2*116/100;
 		RRmiss = RRaverage2*166/100;
+		RRhigh = RRaverage2*116/100;
+		
+		printf("%i\n",RRmiss );
 		printf("%i\n", peak[index]);
 
 		if (RRcount < RRhigh && RRcount > RRlow){
