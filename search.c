@@ -8,7 +8,8 @@ static int indexR = 0;
 int divideCount = 0;
 int rising = 0;
 int RpeakCount = 0;
-int i, j, RRcount;
+int i, j; 
+int RRcount=0;
 int RRaverage1 = 0;
 int RRaverage2 = 0;
 int SPKF = 0;
@@ -22,7 +23,7 @@ int RRvalues[8] = {0,0,0,0,0,0,0,0};
 
 void findPeak(int filtervalue)
 {
-	RRcount += 1; //Counter til RR interval
+	
 	for (i = 0; i < 2; ++i)
 	{
 		compare[i] = compare[i+1];
@@ -46,6 +47,7 @@ void findPeak(int filtervalue)
 			index = 0;
 		}
 	}
+	RRcount += 1; //Counter til RR interval
 }
 void findRPeak ()
 {
@@ -96,6 +98,14 @@ void findRPeak ()
 			//ŔpeakCount += 1;
 		RRaverage2 = 0;
 		RRcount = 0;
+		}
+		else
+		{
+			if (RRcount > RRmiss)
+			{
+				
+
+			}
 		}
 		
 
