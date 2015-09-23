@@ -2,13 +2,13 @@
 #include <stdlib.h>
 
 int compare[3];
-static int peak[8],Rpeak[8];
+static int peak[100],Rpeak[8];
 static int index = 0;
 static int indexR = 0;
 int divideCount = 0;
 int rising = 0;
 int RpeakCount = 0;
-int i, j; 
+int i, j;
 int RRcount=0;
 int RRaverage1 = 0;
 int RRaverage2 = 0;
@@ -17,13 +17,13 @@ int NPKF = 0;
 int RRlow = 0;
 int RRhigh = 300;
 int RRmiss;
-int threshold1 = 2000;
-int threshold2 = 1000;
+int threshold1 = 1000;
+int threshold2 = 500;
 int RRvalues[8] = {0,0,0,0,0,0,0,0};
 
 void findPeak(int filtervalue)
 {
-	
+
 	for (i = 0; i < 2; ++i)
 	{
 		compare[i] = compare[i+1];
@@ -39,22 +39,23 @@ void findPeak(int filtervalue)
 	if(compare[0] <= compare[1] && compare[1] > compare[2] && rising == 1)
 	{
 		rising = 0;
-		peak[index] = compare[1];
+		for (i = 0; i < 100; ++i)
+		{
+			peak[i] = peak[i+1];
+		}
+		peak[99] = compare[1];
 		//printf("%i \n", peak[index]);
 		findRPeak();
-		if (++index > 7)
-		{
-			index = 0;
-		}
+
 	}
 	RRcount += 1; //Counter til RR interval
 }
 void findRPeak ()
 {
-	if (peak[index] > threshold1 /*&& RRcount > 50*/)
+	if (peak[99] > threshold1 /*&& RRcount > 50*/)
 	{
 		//printf("%i\n", RRcount);
-		
+
 
 		if (RRcount < RRhigh && RRcount > RRlow)
 		{
@@ -65,25 +66,28 @@ void findRPeak ()
 		RRvalues[7] = RRcount;
 		// Fucker lidt.
 		//printf("%i\n",RRcount);
-		
+
 			for (i = 0; i < 8; ++i)
 		{
 			//printf("%i\n", RRvalues[i]);
 			RRaverage2 += RRvalues[i];
+			RRaverage1 += RRvalues[i];
 		}
 		divideCount +=1;
 		//printf("%i\n",RRcount );
 		if(divideCount<8)
-		{	
+		{
 			RRaverage2 /= divideCount;
+			RRaverage1 /= divideCount;
 
 		}
 		else
 		{
-			RRaverage2 /= 8;	
+			RRaverage2 /= 8;
+			RRaverage1 /= 8;
 		}
-		
-		Rpeak[indexR] = peak[index];
+
+		Rpeak[indexR] = peak[99];
 		printf("%i %i %i\n", RRcount, Rpeak[indexR], threshold1 );
 		if (++indexR > 7)
 		{
@@ -92,7 +96,7 @@ void findRPeak ()
 		RRlow = RRaverage2*92/100;
 		RRmiss = RRaverage2*166/100;
 		RRhigh = RRaverage2*116/100;
-		SPKF = 0.125 * peak[index] + 0.875 * SPKF;
+		SPKF = 0.125 * peak[99] + 0.875 * SPKF;
 		threshold1 = NPKF + 0.25 *(SPKF - NPKF);
 		threshold2 = 0.5*threshold1;
 			//ŔpeakCount += 1;
@@ -103,18 +107,29 @@ void findRPeak ()
 		{
 			if (RRcount > RRmiss)
 			{
-				
-
+				for (i = 99; i >= 0; --i)
+				{
+					if(peak[i] > threshold2)
+					{
+						Rpeak[indexR] = peak[i];
+						RRaverage1 =
+						RRlow = 92/100*RRaverage1;
+						RRhigh = 116/100*RRaverage1;
+						RRmiss = 166/100*RRaverage1;
+						threshold1 = NPKF + 0.25 * (SPKF-NPKF);
+						threshold2 = 0.5 * threshold1;
+						SPKF = 0.25 * peak[i] + 0.75 * SPKF;
+					}
+				}
 			}
 		}
-		
+
 
 	}
 	else {
-		NPKF = 0.125*peak[index]+0.875*NPKF;
+		NPKF = 0.125*peak[99]+0.875*NPKF;
 		threshold1 = NPKF + 0.25 *(SPKF - NPKF);
 		threshold2 = 0.5*threshold1;
 	}
- 
 }
 
