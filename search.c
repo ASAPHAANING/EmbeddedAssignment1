@@ -51,8 +51,12 @@ void findRPeak ()
 {
 	if (peak[index] > threshold1 /*&& RRcount > 50*/)
 	{
-		//printf("%i\n", peak[index]);
-		for (i = 0; i < 7; ++i)
+		//printf("%i\n", RRcount);
+		
+
+		if (RRcount < RRhigh && RRcount > RRlow)
+		{
+			for (i = 0; i < 7; ++i)
 		{
 			RRvalues[i] = RRvalues[i+1];
 		}
@@ -60,16 +64,13 @@ void findRPeak ()
 		// Fucker lidt.
 		//printf("%i\n",RRcount);
 		
-
-		if (RRcount < RRhigh && RRcount > RRlow){
-			
 			for (i = 0; i < 8; ++i)
 		{
 			//printf("%i\n", RRvalues[i]);
 			RRaverage2 += RRvalues[i];
 		}
 		divideCount +=1;
-
+		//printf("%i\n",RRcount );
 		if(divideCount<8)
 		{	
 			RRaverage2 /= divideCount;
@@ -81,7 +82,7 @@ void findRPeak ()
 		}
 		
 		Rpeak[indexR] = peak[index];
-		printf("%i %i\n", RRcount, Rpeak[indexR] );
+		printf("%i %i %i\n", RRcount, Rpeak[indexR], threshold1 );
 		if (++indexR > 7)
 		{
 			indexR = 0;
@@ -89,14 +90,14 @@ void findRPeak ()
 		RRlow = RRaverage2*92/100;
 		RRmiss = RRaverage2*166/100;
 		RRhigh = RRaverage2*116/100;
+		SPKF = 0.125 * peak[index] + 0.875 * SPKF;
 		threshold1 = NPKF + 0.25 *(SPKF - NPKF);
 		threshold2 = 0.5*threshold1;
-		SPKF = 0.125 * peak[index] + 0.875 * SPKF;
-		
 			//ŔpeakCount += 1;
-		}
 		RRaverage2 = 0;
 		RRcount = 0;
+		}
+		
 
 	}
 	else {
