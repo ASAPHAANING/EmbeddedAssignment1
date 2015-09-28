@@ -16,14 +16,16 @@ int SPKF          = 0;
 int NPKF          = 0;
 int RRlow         = 0;
 int RRhigh        = 300;
-int RRmiss;
+int RRmiss		  = 0;
 int threshold1    = 1000;
 int threshold2    = 500;
 int RRvalues[8]   = {0,0,0,0,0,0,0,0};
+int warning       = 0;
+float time	      = 0;
 
 void findPeak(int filtervalue)
 {
-
+	time++;
 	for (i = 0; i < 2; ++i)
 	{
 		compare[i] = compare[i+1];
@@ -52,9 +54,14 @@ void findPeak(int filtervalue)
 }
 void findRPeak ()
 {
+	warning = 0;
 	if (peak[99] > threshold1 /*&& RRcount > 50*/)
 	{
-		if (RRcount < RRhigh && RRcount > RRlow)
+		if(peak[99] < 2000)
+		{
+		//	printf("%s\n", "WARNING1: Check yo self before you wreck yo self");
+		}
+		if (RRcount <= RRhigh && RRcount >= RRlow)
 		{
 			for (i = 0; i < 7; ++i)
 			{
@@ -80,7 +87,9 @@ void findRPeak ()
 			}
 
 			Rpeak[indexR] = peak[99];
-			printf("%i %i %i\n", RRcount, Rpeak[indexR], threshold1 );
+			RpeakCount++;
+			warning = 0;
+			printf("%i %.2f %.2f\n", Rpeak[indexR], (time/250), ((60/(time/250))*RpeakCount));
 			if (++indexR > 7)
 			{
 				indexR = 0;
@@ -92,40 +101,58 @@ void findRPeak ()
 			threshold1       = NPKF + 0.25 *(SPKF - NPKF);
 			threshold2       = 0.5*threshold1;
 			RRaverage2       = 0;
+			RRaverage1		 = 0;
 			RRcount          = 0;
 		}
 		else
 		{
+			warning++;
+			if (warning >= 5)
+			{
+				printf("%s\n", "WARNING2: RIP");
+			}
+			//printf("(%s %i %i %i)\n", "penis", RRcount, RRlow, RRhigh);
 			if (RRcount > RRmiss)
 			{
-				while (peak[index] > threshold2)
+				i = 0;
+				while (peak[99-i] > threshold2)
 				{
 
-					index++;
+					i++;
 					RRcount--;
+
 				}
 				for (i = 0; i < 7; ++i)
 				{
 					RRvalues[i] = RRvalues[i+1];
 				}
 				RRvalues[7] = RRcount;
+
+
+
 				for (i = 0; i < 8; ++i)
 				{
 					RRaverage1 += RRvalues[i];
 				}
-
-				Rpeak[indexR] = peak[index];
+				Rpeak[indexR] = peak[99-i];
+				warning = 0;
 				RRaverage1    = RRaverage1/8;
-				RRlow         = 0.92*RRaverage1;
-				RRhigh        = 1.16*RRaverage1;
-				RRmiss        = 1.66*RRaverage1;
-				threshold1    = NPKF + 0.25 * (SPKF-NPKF);
-				threshold2    = 0.5 * threshold1;
-				SPKF          = 0.25 * peak[index] + 0.75 * SPKF;
-				RRcount = 0;
+			if (++indexR > 7)
+			{
+				indexR = 0;
+			}
+				printf("%i %.2f %.2f\n", Rpeak[indexR], (time/250), ((60/(time/250))*RpeakCount));
+				RRlow      = 0.92*RRaverage1;
+				RRhigh     = 1.16*RRaverage1;
+				RRmiss     = 1.66*RRaverage1;
+				threshold1 = NPKF + 0.25 * (SPKF-NPKF);
+				threshold2 = 0.5 * threshold1;
+				SPKF       = 0.25 * peak[index] + 0.75 * SPKF;
+				RRcount    = 0;
+				RRaverage1 = 0;
 
 			}
-			RRcount = 0;
+			//RRcount = 0;
 		}
 
 
