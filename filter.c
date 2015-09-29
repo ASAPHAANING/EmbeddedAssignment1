@@ -17,7 +17,7 @@ int i;
 
 void highPassFilter(int pos);
 void derivativeFilter(int pos);
-void squareShit(int result);
+void squaringFilter(int result);
 void movingWindowIntegration(int pos);
 /**
 * [lowPassFilter applies a low pass filter to the original signal one data point at a time.
@@ -70,13 +70,13 @@ void derivativeFilter(int pos)
   hptemp[4]  = pos;
 
   derivative = (2*hptemp[4]+hptemp[4-1]-hptemp[4-3]-2*hptemp[4-4])/8;
-  squareShit(derivative);
+  squaringFilter(derivative);
 //movingWindowIntegration(derivative);
 //printf("%i\n", derivative);
 
 }
 
-void squareShit(int result)
+void squaringFilter(int result)
 {
   int temp = result*result;
   movingWindowIntegration(temp);
