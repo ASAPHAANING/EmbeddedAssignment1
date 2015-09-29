@@ -46,7 +46,6 @@ void findPeak(int filtervalue)
 			peak[i] = peak[i+1];
 		}
 		peak[99]    = compare[1];
-		//printf("%i \n", peak[index]);
 		findRPeak();
 
 	}
@@ -55,11 +54,11 @@ void findPeak(int filtervalue)
 void findRPeak ()
 {
 	warning = 0;
-	if (peak[99] > threshold1 /*&& RRcount > 50*/)
+	if (peak[99] > threshold1)
 	{
 		if(peak[99] < 2000)
 		{
-		//	printf("%s\n", "WARNING1: Check yo self before you wreck yo self");
+		printf("%s\n", "WARNING1: Check yo self before you wreck yo self");
 		}
 		if (RRcount <= RRhigh && RRcount >= RRlow)
 		{
@@ -111,7 +110,6 @@ void findRPeak ()
 			{
 				printf("%s\n", "WARNING2: RIP");
 			}
-			//printf("(%s %i %i %i)\n", "penis", RRcount, RRlow, RRhigh);
 			if (RRcount > RRmiss)
 			{
 				i = 0;
@@ -137,10 +135,10 @@ void findRPeak ()
 				Rpeak[indexR] = peak[99-i];
 				warning = 0;
 				RRaverage1    = RRaverage1/8;
-			if (++indexR > 7)
-			{
-				indexR = 0;
-			}
+				if (++indexR > 7)
+				{
+					indexR = 0;
+				}
 				printf("%i %.2f %.2f\n", Rpeak[indexR], (time/250), ((60/(time/250))*RpeakCount));
 				RRlow      = 0.92*RRaverage1;
 				RRhigh     = 1.16*RRaverage1;
@@ -152,7 +150,6 @@ void findRPeak ()
 				RRaverage1 = 0;
 
 			}
-			//RRcount = 0;
 		}
 
 

@@ -1,4 +1,5 @@
 #include "search.h"
+#include <time.h>
 
 // Fields.
 int lpf[3];
@@ -97,6 +98,7 @@ void movingWindowIntegration(int pos)
 
   }
   mwi /= 30;
+
   findPeak(mwi);
   //printf("%i\n", mwi);
 }
