@@ -3,6 +3,7 @@
 
 int compare[3];
 static int peak[100],Rpeak[8];
+static int distance[100];
 static int index  = 0;
 static int indexR = 0;
 int divideCount   = 0;
@@ -44,8 +45,10 @@ void findPeak(int filtervalue)
 		for (i      = 0; i < 100; ++i)
 		{
 			peak[i] = peak[i+1];
+			distance[i] = distance[i+1];
 		}
 		peak[99]    = compare[1];
+		distance[99] = RRcount;
 		findRPeak();
 
 	}
@@ -104,6 +107,7 @@ void findRPeak ()
 			RRcount          = 0;
 		}
 		else
+			// Searchback
 		{
 			warning++;
 			if (warning >= 5)
@@ -112,13 +116,11 @@ void findRPeak ()
 			}
 			if (RRcount > RRmiss)
 			{
-				i = 0;
-				while (peak[99-i] > threshold2)
+				i = 1;
+				while (peak[99-i] < threshold2)
 				{
-
+					RRcount = distance[99-(i+1)];
 					i++;
-					RRcount--;
-
 				}
 				for (i = 0; i < 7; ++i)
 				{
