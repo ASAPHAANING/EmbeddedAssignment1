@@ -1,0 +1,17 @@
+dp PC(out pc_out : ns(5))
+{
+reg r1 : ns(4);
+always{
+
+$display($dec, "Cycle: ", $cycle); // note : For debuging purposes.
+$display($dec, "pc_out:", pc_out); // note : For debugging purposes
+// todo : Insert code here!
+	pc_out = r1;
+	r1 = r1+1;
+}
+}
+
+system PCsystem
+{
+PC(pc_out);
+}
