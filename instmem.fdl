@@ -1,0 +1,43 @@
+ipblock instmem(in address : ns(5);
+                in wr,rd   : ns(1);
+                in idata   : ns(32);
+                out odata  : ns(32))
+	{
+    iptype "ram";
+    ipparm "size=64";
+    ipparm "wl=32";
+    ipparm "file=program.txt";
+	}
+	
+
+
+dp instructionFetch{
+	
+
+	reg count : ns(3);
+	//sig a : ns(5);
+	sig wr, rd : ns(1);
+	sig id : ns(32);
+	sig od : ns(32);
+
+	use instmem(count,wr,rd,id,od);
+
+	always{
+
+	$display($dec, "Cycle: ", $cycle); // note : For debuging purposes.
+    $display($hex, "od:", od); // note : For debugging purposes.
+
+		count = (count==6) ? 0 : count+1;
+
+		//a = count;
+		rd =1;
+		wr=0;
+		id =0;
+
+	}
+}
+
+system PCsystem
+{
+   instructionFetch;
+}
