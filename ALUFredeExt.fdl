@@ -1,18 +1,21 @@
-dp mux(in A, B : tc(32); in S : ns(2); out R : tc(32))
+dp ALU(in A, B : tc(32); in S : ns(2); out N, Z : ns(1); out R : tc(32))
 {
-always {
-	R = (S == 0b00) ? A - B :
+	always {
+		R = (S == 0b00) ? A - B :
 		(S == 0b01) ? B - A :
 		(S == 0b10) ? A 	:
 		(S == 0b11) ? B 	: B;
+		Z = (R == 0) ? 1 : 0 ;
+		N = (R < 0) ? 1 : 0;
+	}
 }
-}
-dp testAdder(out A, B:tc(32);
+dp testALU(out A, B:tc(32);
 	out S : ns(2);
+	in N, Z : ns(1);
 	in R:tc(32))
 {
 	always{
-		$display($dec, "Cycle:", $cycle, ", A=", A , ", B=", B , ", R=", R, " S=", S);
+		$display($dec, "Cycle:", $cycle, ", A=", A , ", B=", B , ", R=", R, " Z=", Z, " N=", N);
 	}
 	sfg test_0 { A=3; B=6; S=0b00;}
 	sfg test_1 { A=23; B=17; S=0b01;}
@@ -20,7 +23,7 @@ dp testAdder(out A, B:tc(32);
 	sfg test_3 { A=12; B=0; S=0b11;}
 }
 // note : State machine to control the adder testbench.
-fsm f_testbench(testAdder)
+fsm f_testbench(testALU)
 {
 	initial s0;
 	// begin with state s0
@@ -33,6 +36,6 @@ fsm f_testbench(testAdder)
 }
 system myFirstSystem
 {
-	mux(A, B, S, R);
-	testAdder(A, B, S, R);
+	ALU(A, B, S, N, Z, R);
+	testALU(A, B, S, N, Z, R);
 }
