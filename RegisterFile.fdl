@@ -1,10 +1,15 @@
+//$option "debug"
+$option "vcd"
 dp RegisterFile(in ase1, bse1, storesel : ns(3);
 		in storeenable : ns(1);
-		in storedata : tc(2);
-		out a, b : tc(2))
+		in storedata : tc(32);
+		out a, b : tc(32))
 {
 // todo : Insert code here!
-reg adr1, adr2, adr3, adr4, adr5, adr6, adr7, adr8 : tc(2); 
+reg adr1, adr2, adr3, adr4, adr5, adr6, adr7, adr8 : tc(32); 
+$trace(storeenable, "Hans.txt");
+$trace(adr2, "adr2.txt");
+$trace(a, "a_file.txt");
 always{
 	adr1 = 0;
 	adr2 = ((storeenable==1) & (storesel==0b001))?storedata : adr2;
@@ -36,16 +41,16 @@ always{
 }
 dp testRegisterFile(out ase1, bse1, storesel : ns(3);
 		out storeenable : ns(1);
-		out storedata : tc(2);
-		in a, b : tc(2))
+		out storedata : tc(32);
+		in a, b : tc(32))
 {
 always{
 $display($dec, "Cycle:", $cycle, ", a=", a , ", b=", b ,", storeenable=", storeenable);
 }
-sfg test_0 { storesel=0b001; storeenable=1; storedata=0b11; ase1=0b000; bse1=000; }
-sfg test_1 { storesel=0b101; storeenable=1; storedata=0b10; ase1=0b001; bse1=000; }
-sfg test_2 { storesel=0b111; storeenable=0; storedata=0b01; ase1=0b101; bse1=001; }
-sfg test_3 { storesel=0b001; storeenable=1; storedata=0b11; ase1=0b111; bse1=101; }
+sfg test_0 { storesel=0b001; storeenable=1; storedata=2; ase1=0b001; bse1=000; }
+sfg test_1 { storesel=0b101; storeenable=1; storedata=3; ase1=0b001; bse1=000; }
+sfg test_2 { storesel=0b111; storeenable=0; storedata=4; ase1=0b101; bse1=001; }
+sfg test_3 { storesel=0b001; storeenable=1; storedata=5; ase1=0b111; bse1=101; }
 } 
 // note : State machine to control the mux testbench.
 fsm f_testbench(testRegisterFile)
