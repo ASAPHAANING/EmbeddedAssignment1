@@ -24,7 +24,7 @@ dp instructionFetch{
 	always{
 
 	$display($dec, "Cycle: ", $cycle, ", count =", count); // note : For debuging purposes.
-    $display($hex, "od:", od); // note : For debugging purposes.
+    $display($bin, "od:", od); // note : For debugging purposes.
 
 		count = (count==31) ? 0 : count+1;
 

@@ -21,10 +21,10 @@ dp controller(	in Z, N : ns(1);
 		asel = inst[22:24];
 		bsel = inst[19:21];
 		muxdata = inst[9:18];
-		muxen = (inst[28:31]==0b0001 | inst[28:31]==0b0011)?0b0: 0b1;
+		muxen = (inst[28:31]==0b0001)?0b0: 0b1;
 		bmuxen = (inst[9:18]==0b0000000000)?0b0:0b1;
 		alusel = (inst[28:31]==0b0010 | inst[28:31]==0b0101 | inst[28:31]==0b0111)? 0b00 : 
-				(inst[28:31]== 0b0100 | inst[28:31]==0b0110 | inst[28:31]==0b0001 | inst[28:31]==0b0011)? 0b01 : 0b10;
+				(inst[28:31]== 0b0100 | inst[28:31]==0b0110 | inst[28:31]==0b0001)? 0b01 : 0b10;
 		storeenable = (inst[25:27]==0b000)? 0 :1;
 		
 
