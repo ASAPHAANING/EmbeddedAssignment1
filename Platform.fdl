@@ -1,14 +1,14 @@
 $option "vcd"
 
 
-dp controller(  in Z, N : ns(1);
+dp controller(in Z, N : ns(1);
         in inst : ns(32);
         out pcen : ns(1);
         out jumpdes : ns(5);
         out muxen, bmuxen : ns(1); //storeenable, muxenable : ns(1);
         out storesel, asel, bsel : ns(3);
         out muxdata : ns(32);
-        out alusel : ns(2);
+        out alusel, rd_wr_en : ns(2);
         out storeenable : ns(1)
         )
 {
@@ -21,11 +21,13 @@ dp controller(  in Z, N : ns(1);
     asel = inst[22:24];
     bsel = inst[19:21];
     muxdata = inst[9:18];
-    muxen = (inst[28:31]==0b0001)?0b0: 0b1;
+    muxen = (inst[28:31]==0b0001 | inst[28:31]==0b0011)?0b0: 0b1;
     bmuxen = (inst[9:18]==0b0000000000)?0b0:0b1;
     alusel = (inst[28:31]==0b0010 | inst[28:31]==0b0101 | inst[28:31]==0b0111)? 0b00 : 
-        (inst[28:31]== 0b0100 | inst[28:31]==0b0110 | inst[28:31]==0b0001)? 0b01 : 0b10;
+        (inst[28:31]== 0b0100 | inst[28:31]==0b0110 | inst[28:31]==0b0001 | inst[28:31]==0b0011)? 0b01 : 0b10;
     storeenable = (inst[25:27]==0b000)? 0 :1;
+    rd_wr_en = (inst[28:31]== 0b0001)? 0b11 ://store
+               (inst[28:31]== 0b0011)? 0b10 : 0b00; //load word
     
 
   }
@@ -41,10 +43,10 @@ reg r1 : ns(5);
 always{
   $display($dec, "r1 = ", r1, " stall = ", stall);
   r1 = (countEn == 0b1)?jumpdes:
-     (r1 == 1 & stall == 0)? r1 : r1+1;
+     ((r1 == 1 & stall == 0) | (r1 == 3 & stall == 0) | (r1 == 6 & stall == 0) | (r1 == 17 & stall == 0))? r1 : r1+1;
   //(countEn == 0b10)? 0xb :
   //(countEn == 0b01)? 0xa : 
-  pc_out = r1;
+  pc_out =(stall == 1 )? r1+1: r1;
 }
 }
 
@@ -152,14 +154,19 @@ always{
 
 }
 
-dp instructionFetch{
+dp instructionFetch(in pcstall : ns(1);
+                    in inputdata : ns(32);
+                    out read_write : ns(2);
+                    out rfb, alur : ns(32))
+{
   
 
   sig asel1, bsel1 : ns(3);
   reg rd, wr, id, stall1 : ns(1);
-  reg input : ns(32);
+  //reg input : ns(32);
   sig out_a, out_b, out_r, instmem_out, bmuxout : tc(32);
-  sig sel1 : ns(2);
+  sig sel1 : ns(22);
+  //sig read_writ : ns(2);
   sig out_z, out_n, storeenable1, muxen1, bmuxen1 : ns(1);
   sig pc_in :ns(1); 
   sig pc_out: ns(5);
@@ -173,10 +180,10 @@ dp instructionFetch{
 //$trace(out_r, "Hans4.txt");
 //$trace(instmem_out, "Hans5.txt");
 
-  use controller(out_z, out_n, instmem_out, pc_in, jumpdes1, muxen1, bmuxen1, storesel1, asel1, bsel1, muxdata1,sel1, storeenable1);
-  use PC(stall1, pc_in, jumpdes1, pc_out);
+  use controller(out_z, out_n, instmem_out, pc_in, jumpdes1, muxen1, bmuxen1, storesel1, asel1, bsel1, muxdata1,sel1, read_write, storeenable1);
+  use PC(pcstall, pc_in, jumpdes1, pc_out);
   use instmem(pc_out, wr, rd, id, instmem_out);
-  use dataMux32(out_r, input, muxen1, storedata1);
+  use dataMux32(out_r, inputdata, muxen1, storedata1);
   use bMux32(muxdata1, out_b, bmuxen1, bmuxout);
   //use IR();
   use RegisterFile(asel1, bsel1, storesel1,storeenable1,storedata1, out_a, out_b);
@@ -184,25 +191,25 @@ dp instructionFetch{
 
   always{
 
-  $display($dec, "Cycle: ", $cycle, ", output regA = ", out_a, ", output regB = ", bmuxout, ", PCout= ", pc_out, " pcen= ", pc_in," outZ= ", out_z, " out_n= ", out_n, " outmux = ", storedata1, " R = ", out_r); 
+  $display($dec, "Cycle: ", $cycle, ", output regA = ", out_a, ", output regB = ", bmuxout, ", PCout= ", pc_out, " pcen= ", pc_in," outZ= ", out_z, " out_n= ", out_n, " muxen = ", muxen1, " outmux = ", storedata1, " R = ", out_r); 
   //$display($dec, "Cycle: ", $cycle, ", PCtoIM= ", pc_out, " pcen= ", pc_in,  " R = ", out_r); 
   $display($bin,  " instmem_out= ", instmem_out, " storereg = ", storesel1, " asel = ", asel1, " bsel = ", bsel1);// note : For debuging purposes.
     //asel1=0b001; 
     //bsel1=0b010; 
     //storesel1=0b001; 
     //storeenable1=1; 
-    input=6;
+    //input=6;
     rd = 1;
     wr = 0;
-    stall1 = 1;
+    //stall1 = 1;
+    rfb = out_b;
+    alur = out_r;
     //pc_in =1;
   }
 }
 
-system PCsystem
-{
-   instructionFetch;
-}
+
+
 
 ////////////////////////////
 // CPU
@@ -217,21 +224,21 @@ dp CPU(
            //in stall_cpu : ns(1)
        ){
        		// Implement your CPU here. 
-       // Please remove the code below (it is only added such that that the platform can run without faults)       
-       reg counter : ns(32);
-       reg rd_wr : ns(1); 
+        sig read_write_en : ns(2);
+       sig regfileb, aluoutr : ns(32); 
+       reg read_write_en2 : ns(2);// Please remove the code below (it is only added such that that the platform can run without faults)       
+       //reg rd_wr : ns(1); 
+      use instructionFetch(M_dataoutrdy, M_dataout, read_write_en, regfileb, aluoutr);
        always{
           $display($dec, "Cycle: ", $cycle, ", M_datain= ", M_datain, " M_cmd= ", M_cmd, " M_datainrdy = ", M_datainrdy, " M_dataout= ", M_dataout, " M_dataoutrdy= ", M_dataoutrdy); 
-          $display($dec, "Counter = ", counter, " rd_wr = ", rd_wr);
-          $display($bin, "M_cmd = ", M_cmd);
-          counter = (M_dataoutrdy[0:31] != 0)? counter +1 : counter;
-       		M_datain = counter+1;
+          $display($bin, "M_cmd = ", M_cmd, " R = ", M_datain, " B = ", regfileb);
+       		M_datain = (read_write_en[0:0] == 0)?aluoutr: regfileb;
           //rd_wr = (counter < 8 & rd_wr == 0)? 0 :
             //      (rd_wr == 1)? 0 : 1;
-
-          rd_wr = 0;
-       		M_cmd = 0b00100000000000000000000000000000;
-       		M_datainrdy = 0b1;
+          //read_write_en2 = read_write_en; //(read_write_en2==0)?read_write_en : 0;
+          //rd_wr = 0;
+       		M_cmd = 0b0010#read_write_en[0:0] # aluoutr[0:26];
+       		M_datainrdy = read_write_en[1:1];
        }       
 }
 
@@ -284,7 +291,7 @@ dp bus(
         in ID_Sensor : ns(4);
         in ID_DataMem : ns(4);
         in ID_Output : ns(4)
-		
+    
         ){
         
         $trace(reqDataMem, "traces/reqDataMem.seq");
@@ -701,7 +708,7 @@ dp DataMem(
        address = (cmdr[27] == 0) ? datainr : 0b00000 # cmdr[0:26]; // if Store Word instruction, use cmd[0:26] as address. If Load Word instruction use datain as address
        idata = (cmdr[27] == 0) ? 0 : datainr; // if store word use datain as data to be stored, if load word, just set idata to 0
        //$display($dec, "Cycle: ", $cycle);
-   	   $display($dec, "   address: ", address);
+       //$display($dec, "   address: ", address);
    }
    
    sfg captureData{
@@ -765,30 +772,30 @@ dp Sensor(
     
     use sensordata(address,wr,rd,idata,odata);
 
-   	reg c : ns(10);
-   	reg reset : ns(1);
-   	reg addr : ns(8);
-   	reg LIMIT : ns(10); // How many cycles to wait before it "acquires" the next datapoint (simulated sampling rate)
-   	reg stallr : ns(1);
-   	reg datainrdyr : ns(1);
-   	
-   	$trace(odata, "traces/SS_data.seq");
-   	$trace(c, "traces/SS_c.seq");
-   	
-   	always{
-   		wr = 0;
-   		idata = 0;
-   		LIMIT = 9; // 0 means 1 cycles => Pick new point each cycle TODO: Set proper sampling rate
-   		address = addr;
-   		
-   		dataout = odata;
-   		//dataoutrdy = 0;
-   		stallr = stall;
-   		//$display($dec, "Cycle: ", $cycle);
-   		//$display($dec, "   data: ", odata);
-   		//$display($dec, "   address: ", address);
-   	}
-   	
+    reg c : ns(10);
+    reg reset : ns(1);
+    reg addr : ns(8);
+    reg LIMIT : ns(10); // How many cycles to wait before it "acquires" the next datapoint (simulated sampling rate)
+    reg stallr : ns(1);
+    reg datainrdyr : ns(1);
+    
+    $trace(odata, "traces/SS_data.seq");
+    $trace(c, "traces/SS_c.seq");
+    
+    always{
+      wr = 0;
+      idata = 0;
+      LIMIT = 9; // 0 means 1 cycles => Pick new point each cycle TODO: Set proper sampling rate
+      address = addr;
+      
+      dataout = odata;
+      //dataoutrdy = 0;
+      stallr = stall;
+      //$display($dec, "Cycle: ", $cycle);
+      //$display($dec, "   data: ", odata);
+      //$display($dec, "   address: ", address);
+    }
+    
    sfg captureData{  
        dataoutrdy = 0; 
        datainrdyr = datainrdy;
@@ -808,16 +815,16 @@ dp Sensor(
        dataoutrdy = 0; 
    }
 
-	sfg count{
-    	c = c + 1;
-    	rd = 0;
-	}
-   	
-   	sfg addressUpdate{
-   	   addr = addr + 1;
-   	   rd = 1;
-   	   c = 0;
-   	}
+  sfg count{
+      c = c + 1;
+      rd = 0;
+  }
+    
+    sfg addressUpdate{
+       addr = addr + 1;
+       rd = 1;
+       c = 0;
+    }
 
 }
 
