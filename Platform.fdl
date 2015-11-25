@@ -1,216 +1,6 @@
 $option "vcd"
 
 
-dp controller(in Z, N : ns(1);
-        in inst : ns(32);
-        out pcen : ns(1);
-        out jumpdes : ns(5);
-        out muxen, bmuxen : ns(1); //storeenable, muxenable : ns(1);
-        out storesel, asel, bsel : ns(3);
-        out muxdata : ns(32);
-        out alusel, rd_wr_en : ns(2);
-        out storeenable : ns(1)
-        )
-{
-  //sig PCenable : ns(2);
-  always{
-    pcen = ((inst[28:31]==0b1001) | (inst[28:31]==0b0111 & Z == 1) | 
-         (inst[28:31]== 0b1000 & Z == 0 & N ==0)|(inst[28:31]==0b1010 & (Z==1 | N==1)))? 0b1 : 0b0;
-    jumpdes = inst[0:4]-1;
-    storesel = inst[25:27];
-    asel = inst[22:24];
-    bsel = inst[19:21];
-    muxdata = inst[9:18];
-    muxen = (inst[28:31]==0b0001 | inst[28:31]==0b0011)?0b0: 0b1;
-    bmuxen = (inst[9:18]==0b0000000000)?0b0:0b1;
-    alusel = (inst[28:31]==0b0010 | inst[28:31]==0b0101 | inst[28:31]==0b0111)? 0b00 : 
-        (inst[28:31]== 0b0100 | inst[28:31]==0b0110 | inst[28:31]==0b0001 | inst[28:31]==0b0011)? 0b01 : 0b10;
-    storeenable = (inst[25:27]==0b000)? 0 :1;
-    rd_wr_en = (inst[28:31]== 0b0001)? 0b11 ://store
-               (inst[28:31]== 0b0011)? 0b10 : 0b00; //load word
-    
-
-  }
-}
-
-
-
-dp PC(in stall, countEn : ns(1);
-    in jumpdes : ns(5);
-    out pc_out : ns(5))
-{
-reg r1 : ns(5);
-always{
-  $display($dec, "r1 = ", r1, " stall = ", stall);
-  r1 = (countEn == 0b1)?jumpdes:
-     ((r1 == 1 & stall == 0) | (r1 == 3 & stall == 0) | (r1 == 6 & stall == 0) | (r1 == 17 & stall == 0))? r1 : r1+1;
-  //(countEn == 0b10)? 0xb :
-  //(countEn == 0b01)? 0xa : 
-  pc_out =(stall == 1 )? r1+1: r1;
-}
-}
-
-ipblock instmem(in address : ns(5);
-                in wr,rd   : ns(1);
-                in idata   : ns(32);
-                out odata  : ns(32))
-  {
-    iptype "ram";
-    ipparm "size=34";
-    ipparm "wl=32";
-    ipparm "file=program.txt";
-  }
-
-// Hvis data skal forsinkes, i forhold til hvornår det er klar til at modtage data, skal IR bruges.
-// dp IR(in inst : ns(32);
-//    out hold : ns(32))
-//{
-//  always
-//}
-
-dp dataMux32(in R, inp : ns(32);
-    in en : ns(1);
-      out storedata : ns(32))
-{
-// todo : Insert code here!
-always{
-  storedata=(en==1)? R : inp;
-}
-}
-
-dp bMux32(in addsub, bin : ns(32);
-    in en : ns(1);
-      out bout : ns(32))
-{
-// todo : Insert code here!
-always{
-  bout=(en==1)? addsub: bin;
-        
-}
-}
-
-dp RegisterFile(in ase1, bse1, storesel : ns(3);
-    in storeenable : ns(1);
-    in storedata : tc(32);
-    out a, b : tc(32))
-{
-reg adr1, adr2, adr3, adr4, adr5, adr6, adr7, adr8 : tc(32); 
-$trace(storeenable, "Hans.txt");
-$trace(adr2, "adr2.txt");
-$trace(adr3, "adr3.txt");
-$trace(adr4, "adr4.txt");
-$trace(adr5, "adr5.txt");
-$trace(adr6, "adr6.txt");
-$trace(adr7, "adr7.txt");
-$trace(adr8, "adr8.txt");
-//$trace(a, "a_file.txt");
-always{
-  adr1 = 0;
-  adr2 = ((storeenable==1) & (storesel==0b001))?storedata : adr2;
-  adr3 = ((storeenable==1) & (storesel==0b010))?storedata : adr3;
-  adr4 = ((storeenable==1) & (storesel==0b011))?storedata : adr4;
-  adr5 = ((storeenable==1) & (storesel==0b100))?storedata : adr5;
-  adr6 = ((storeenable==1) & (storesel==0b101))?storedata : adr6;
-  adr7 = ((storeenable==1) & (storesel==0b110))?storedata : adr7;
-  adr8 = ((storeenable==1) & (storesel==0b111))?storedata : adr8;
-
-  a = (ase1==0b001)? adr2 :
-    (ase1==0b010)? adr3 :
-    (ase1==0b011)? adr4 :
-    (ase1==0b100)? adr5 :
-    (ase1==0b101)? adr6 :
-    (ase1==0b110)? adr7 :
-    (ase1==0b111)? adr8 : adr1;
-
-  b = (bse1==0b001)? adr2 :
-    (bse1==0b010)? adr3 :
-    (bse1==0b011)? adr4 :
-    (bse1==0b100)? adr5 :
-    (bse1==0b101)? adr6 :
-    (bse1==0b110)? adr7 :
-    (bse1==0b111)? adr8 : adr1;
-
-}
-
-}
-
-dp ALU32(in A, B : tc(32);
-    in sel : ns(2);
-    out Z, N : ns(1);
-      out R : tc(32))
-{
-// todo : Insert code here!
-//$trace(A, "aluA.txt");
-//$trace(B, "aluB.txt");
-//$trace(R, "aluR.txt");
-always{
-  R=(sel==0b00)?A-B:
-  (sel==0b01)?A+B:
-  (sel==0b10)?A:
-  (sel==0b11)?B: 111;
-  Z = (R==0)?1:0;
-  N = R[32];
-}
-
-}
-
-dp instructionFetch(in pcstall : ns(1);
-                    in inputdata : ns(32);
-                    out read_write : ns(2);
-                    out rfb, alur : ns(32))
-{
-  
-
-  sig asel1, bsel1 : ns(3);
-  reg rd, wr, id, stall1 : ns(1);
-  //reg input : ns(32);
-  sig out_a, out_b, out_r, instmem_out, bmuxout : tc(32);
-  sig sel1 : ns(22);
-  //sig read_writ : ns(2);
-  sig out_z, out_n, storeenable1, muxen1, bmuxen1 : ns(1);
-  sig pc_in :ns(1); 
-  sig pc_out: ns(5);
-  sig storesel1: ns(3);
-  sig muxdata1, storedata1: ns(32);
-  sig jumpdes1: ns(5);
-//$trace(asel1, "Hans6.txt");
-//$trace(bsel1, "Hans1.txt");
-//$trace(out_a, "Hans2.txt");
-//$trace(out_b, "Hans3.txt");
-//$trace(out_r, "Hans4.txt");
-//$trace(instmem_out, "Hans5.txt");
-
-  use controller(out_z, out_n, instmem_out, pc_in, jumpdes1, muxen1, bmuxen1, storesel1, asel1, bsel1, muxdata1,sel1, read_write, storeenable1);
-  use PC(pcstall, pc_in, jumpdes1, pc_out);
-  use instmem(pc_out, wr, rd, id, instmem_out);
-  use dataMux32(out_r, inputdata, muxen1, storedata1);
-  use bMux32(muxdata1, out_b, bmuxen1, bmuxout);
-  //use IR();
-  use RegisterFile(asel1, bsel1, storesel1,storeenable1,storedata1, out_a, out_b);
-  use ALU32(out_a, bmuxout, sel1, out_z, out_n, out_r);
-
-  always{
-
-  $display($dec, "Cycle: ", $cycle, ", output regA = ", out_a, ", output regB = ", bmuxout, ", PCout= ", pc_out, " pcen= ", pc_in," outZ= ", out_z, " out_n= ", out_n, " muxen = ", muxen1, " outmux = ", storedata1, " R = ", out_r); 
-  //$display($dec, "Cycle: ", $cycle, ", PCtoIM= ", pc_out, " pcen= ", pc_in,  " R = ", out_r); 
-  $display($bin,  " instmem_out= ", instmem_out, " storereg = ", storesel1, " asel = ", asel1, " bsel = ", bsel1);// note : For debuging purposes.
-    //asel1=0b001; 
-    //bsel1=0b010; 
-    //storesel1=0b001; 
-    //storeenable1=1; 
-    //input=6;
-    rd = 1;
-    wr = 0;
-    //stall1 = 1;
-    rfb = out_b;
-    alur = out_r;
-    //pc_in =1;
-  }
-}
-
-
-
-
 ////////////////////////////
 // CPU
 ////////////////////////////
@@ -223,22 +13,12 @@ dp CPU(
            in M_dataoutrdy : ns(1)
            //in stall_cpu : ns(1)
        ){
-       		// Implement your CPU here. 
-        sig read_write_en : ns(2);
-       sig regfileb, aluoutr : ns(32); 
-       reg read_write_en2 : ns(2);// Please remove the code below (it is only added such that that the platform can run without faults)       
-       //reg rd_wr : ns(1); 
-      use instructionFetch(M_dataoutrdy, M_dataout, read_write_en, regfileb, aluoutr);
+          // Implement your CPU here. 
+          // Please remove the code below (it is only added such that that the platform can run without faults)       
        always{
-          $display($dec, "Cycle: ", $cycle, ", M_datain= ", M_datain, " M_cmd= ", M_cmd, " M_datainrdy = ", M_datainrdy, " M_dataout= ", M_dataout, " M_dataoutrdy= ", M_dataoutrdy); 
-          $display($bin, "M_cmd = ", M_cmd, " R = ", M_datain, " B = ", regfileb);
-       		M_datain = (read_write_en[0:0] == 0)?aluoutr: regfileb;
-          //rd_wr = (counter < 8 & rd_wr == 0)? 0 :
-            //      (rd_wr == 1)? 0 : 1;
-          //read_write_en2 = read_write_en; //(read_write_en2==0)?read_write_en : 0;
-          //rd_wr = 0;
-       		M_cmd = 0b0010#read_write_en[0:0] # aluoutr[0:26];
-       		M_datainrdy = read_write_en[1:1];
+          M_datain = 0;
+          M_cmd = 0;
+          M_datainrdy = 0;
        }       
 }
 
@@ -286,52 +66,37 @@ dp bus(
         in dataRdyOutput : ns(1); 
         in dataoutOutput : ns(32); // data from output to CPU
         out waitOutput : ns(1);
+
+        // CoPro interface
+        out CoProreqOutput : ns(1);
+        out CoProcmdOutput : ns(32);
+        out CoProdatainOutput : ns(32); // data to output from CPU
+        in CoProackOutput : ns(1);
+               
+        in CoProdataRdyOutput : ns(1); 
+        in CoProdataoutOutput : ns(32); // data from output to CPU
+        out CoProwaitOutput : ns(1);
+
+
         
         // IDs
         in ID_Sensor : ns(4);
         in ID_DataMem : ns(4);
-        in ID_Output : ns(4)
+        in ID_Output : ns(4);
+        in ID_CoPro : ns(4)
     
         ){
         
-        $trace(reqDataMem, "traces/reqDataMem.seq");
-        $trace(cmdDataMem, "traces/cmdDataMem.seq");
-        $trace(datainDataMem, "traces/datainDataMem.seq");
-        $trace(ackDataMem, "traces/ackDataMem.seq");
-        $trace(dataRdyDataMem, "traces/dataRdyDataMem.seq");
-        $trace(dataoutDataMem, "traces/dataoutDataMem.seq");
-        $trace(waitDataMem, "traces/waitDataMem.seq");
-        
-        $trace(reqSensor, "traces/reqSensor.seq");
-        $trace(cmdSensor, "traces/cmdSensor.seq");
-        $trace(ackSensor, "traces/ackSensor.seq");
-        $trace(dataRdySensor, "traces/dataRdySensor.seq");
-        $trace(dataoutSensor, "traces/dataoutSensor.seq");
-        $trace(waitSensor, "traces/waitSensor.seq");
-        
-        $trace(reqOutput, "traces/reqOutput.seq");
-        $trace(cmdOutput, "traces/cmdOutput.seq");
-        $trace(datainOutput, "traces/datainOutput.seq");
-        $trace(ackOutput, "traces/ackOutput.seq");
-        $trace(dataRdyOutput, "traces/dataRdyOutput.seq");
-        $trace(dataoutOutput, "traces/dataoutOutput.seq");
-        $trace(waitOutput, "traces/waitOutput.seq");
-        
-        $trace(reqCPU, "traces/reqCPU.seq");
-        $trace(cmdCPU, "traces/cmdCPU.seq");
-        $trace(dataoutCPU, "traces/dataoutCPU.seq");
-        $trace(ackCPU, "traces/ackCPU.seq");
-        $trace(dataRdyCPU, "traces/dataRdyCPU.seq");
-        $trace(datainCPU, "traces/datainCPU.seq");
-        $trace(waitCPU, "traces/waitCPU.seq");
+//Traces
         
         always{
-          ackCPU = (cmdCPU[28:31] == ID_DataMem & ackDataMem) | (cmdCPU[28:31] == ID_Sensor & ackSensor) | (cmdCPU[28:31] == ID_Output & ackOutput); // "OR" all slaves ack signals here
-          dataRdyCPU = dataRdyDataMem | dataRdySensor | dataRdyOutput; // Only one slave can access the bus at any one time (only the slave which responds to the cmd)
+          ackCPU = (cmdCPU[28:31] == ID_DataMem & ackDataMem) | (cmdCPU[28:31] == ID_Sensor & ackSensor) | (cmdCPU[28:31] == ID_Output & ackOutput) | (cmdCPU[28:31] == ID_CoPro & CoProackOutput); // "OR" all slaves ack signals here
+          dataRdyCPU = dataRdyDataMem | dataRdySensor | dataRdyOutput | CoProdataRdyOutput; // Only one slave can access the bus at any one time (only the slave which responds to the cmd)
           
           reqDataMem = reqCPU;
           cmdDataMem = (reqCPU) ? cmdCPU : 0;
           datainDataMem = (reqCPU) ? dataoutCPU : 0;
+
           
           reqSensor = reqCPU;
           cmdSensor = (reqCPU) ? cmdCPU : 0;
@@ -341,10 +106,16 @@ dp bus(
           cmdOutput = (reqCPU) ? cmdCPU : 0;
           datainOutput = (reqCPU) ? dataoutCPU : 0;
           waitOutput = waitCPU;
+
+          CoProreqOutput = reqCPU;
+          CoProcmdOutput = (reqCPU) ? cmdCPU : 0;
+          CoProdatainOutput = (reqCPU) ? dataoutCPU : 0;
+          CoProwaitOutput = waitCPU;
                     
           datainCPU = (dataRdyDataMem) ? dataoutDataMem : 
                       (dataRdySensor) ? dataoutSensor : 
                       (dataRdyOutput) ? dataoutOutput :
+                      (CoProdataRdyOutput) ? CoProdataoutOutput :
                       0; // arbitrate here when multiple slaves
           waitDataMem = waitCPU;
           
@@ -460,6 +231,7 @@ fsm slavebusinterface_cntrl(slavebusinterface){
 
 dp slavebusinterface2 : slavebusinterface
 dp slavebusinterface3 : slavebusinterface
+dp slavebusinterface4 : slavebusinterface
 
 dp masterbusinterface(
           // Bus ports
@@ -604,14 +376,25 @@ dp bus_toplevel(
            out OP_dataout : ns(32); // data port not used in sensor
            out OP_cmdout : ns(32);
            out OP_dataoutrdy : ns(1);
-           out OP_stall : ns(1)
+           out OP_stall : ns(1);
+
+
+          // Slave interface (CoPro)
+           in COP_datain : ns(32);
+           in COP_datainrdy : ns(1);
+           out COP_dataout : ns(32); // data port not used in sensor
+           out COP_cmdout : ns(32);
+           out COP_dataoutrdy : ns(1);
+           out COP_stall : ns(1)
+
            ){
            
-           sig reqCPU,reqDataMem,reqSensor,reqOutput,ackCPU,ackDataMem,ackSensor,ackOutput,dataRdyCPU,dataRdyDataMem,dataRdySensor,dataRdyOutput,waitCPU,waitDataMem,waitSensor,waitOutput: ns(1);
-           sig cmdCPU,cmdDataMem,cmdSensor,cmdOutput,dataoutCPU,datainDataMem,datainSensor,datainOutput,datainCPU,dataoutDataMem,dataoutSensor,dataoutOutput : ns(32);
+           sig reqCPU,reqDataMem,reqSensor,reqOutput,CoProreqOutput,ackCPU,ackDataMem,ackSensor,ackOutput,CoProackOutput,dataRdyCPU,dataRdyDataMem,dataRdySensor,dataRdyOutput,CoProdataRdyOutput,waitCPU,waitDataMem,waitSensor,waitOutput, CoProwaitOutput: ns(1);
+           sig cmdCPU,cmdDataMem,cmdSensor,cmdOutput,CoProcmdOutput,dataoutCPU,datainDataMem,datainSensor,datainOutput,CoProdatainOutput,datainCPU,dataoutDataMem,dataoutSensor,dataoutOutput,CoProdataoutOutput : ns(32);
            reg ID_DataMem : ns(4);
            reg ID_Sensor : ns(4);
            reg ID_Output : ns(4);
+           reg ID_CoPro : ns(4);
            
            $trace(DM_datain, "traces/DM_datain.seq");
            $trace(DM_datainrdy, "traces/DM_datainrdy.seq");
@@ -635,8 +418,10 @@ dp bus_toplevel(
                    reqDataMem,cmdDataMem,datainDataMem,ackDataMem,dataRdyDataMem,dataoutDataMem,waitDataMem, // Data memory (slave)
                    reqSensor,cmdSensor,datainSensor,ackSensor,dataRdySensor,dataoutSensor,waitSensor,
                    reqOutput,cmdOutput,datainOutput,ackOutput,dataRdyOutput,dataoutOutput,waitOutput,// Sensor (slave)
-                   ID_Sensor,ID_DataMem,ID_Output); 
+                   CoProreqOutput,CoProcmdOutput,CoProdatainOutput,CoProackOutput,CoProdataRdyOutput,CoProdataoutOutput,CoProwaitOutput,// CoPro (slave)
+                   ID_Sensor,ID_DataMem,ID_Output, ID_CoPro); 
            
+
            use masterbusinterface(reqCPU,cmdCPU,dataoutCPU,ackCPU,dataRdyCPU,datainCPU,waitCPU, // Bus interface
                                   //CPUdatain,CPUcmd,CPUdatainrdy,CPUdataout,CPUdataoutrdy
                                   M_datain,M_cmd,M_datainrdy,M_dataout,M_dataoutrdy);
@@ -652,11 +437,16 @@ dp bus_toplevel(
            use slavebusinterface3(reqOutput,cmdOutput,datainOutput,ackOutput,dataRdyOutput,dataoutOutput,waitOutput, // Bus interface (data memory)
                               //OPDatain,OPDatainrdy,OPDataout,OPCmdout,OPDataoutrdy,
                               OP_datain,OP_datainrdy,OP_dataout,OP_cmdout,OP_dataoutrdy,ID_Output,OP_stall);
+
+           use slavebusinterface4(CoProreqOutput,CoProcmdOutput,CoProdatainOutput,CoProackOutput,CoProdataRdyOutput,CoProdataoutOutput,CoProwaitOutput, // Bus interface (data memory)
+                              //OPDatain,OPDatainrdy,OPDataout,OPCmdout,OPDataoutrdy,
+                              COP_datain,COP_datainrdy,COP_dataout,COP_cmdout,COP_dataoutrdy,ID_CoPro,COP_stall);
            
            always{
               ID_Sensor = 0x1;
               ID_DataMem = 0x2;
               ID_Output = 0x3;
+              ID_CoPro = 0x4;
            }
 }
 
@@ -915,6 +705,8 @@ fsm Output_cntrl(Output){
        else (awaithandshake) -> s1;
        
 }
+
+
 
 ////////////////////////////
 // System connections
