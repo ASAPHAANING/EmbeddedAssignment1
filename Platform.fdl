@@ -1,7 +1,7 @@
 $option "vcd"
 
 
-dp controller(in Z, N : ns(1);
+dp controller(in stall, Z, N : ns(1);
         in inst : ns(32);
         out pcen : ns(1);
         out jumpdes : ns(5);
@@ -21,7 +21,7 @@ dp controller(in Z, N : ns(1);
     asel = inst[22:24];
     bsel = inst[19:21];
     muxdata = inst[9:18];
-    muxen = (inst[28:31]==0b0001 | inst[28:31]==0b0011)?0b0: 0b1;
+    muxen = (inst[28:31]==0b0001 | (inst[28:31]==0b0011 & stall == 1))?0b0: 0b1;
     bmuxen = (inst[9:18]==0b0000000000)?0b0:0b1;
     alusel = (inst[28:31]==0b0010 | inst[28:31]==0b0101 | inst[28:31]==0b0111)? 0b00 : 
         (inst[28:31]== 0b0100 | inst[28:31]==0b0110 | inst[28:31]==0b0001 | inst[28:31]==0b0011)? 0b01 : 0b10;
@@ -180,7 +180,7 @@ dp instructionFetch(in pcstall : ns(1);
 //$trace(out_r, "Hans4.txt");
 //$trace(instmem_out, "Hans5.txt");
 
-  use controller(out_z, out_n, instmem_out, pc_in, jumpdes1, muxen1, bmuxen1, storesel1, asel1, bsel1, muxdata1,sel1, read_write, storeenable1);
+  use controller(pcstall, out_z, out_n, instmem_out, pc_in, jumpdes1, muxen1, bmuxen1, storesel1, asel1, bsel1, muxdata1,sel1, read_write, storeenable1);
   use PC(pcstall, pc_in, jumpdes1, pc_out);
   use instmem(pc_out, wr, rd, id, instmem_out);
   use dataMux32(out_r, inputdata, muxen1, storedata1);
