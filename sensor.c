@@ -29,7 +29,7 @@ void handle_line(int line, int *xsamples)
 */
 int getNextData(int *xsamples)
 {
-  FILE *samples = fopen("ECG.txt", "r");
+  FILE *samples = fopen("ECG10800K.txt", "r");
   int buffer;
   while(fscanf(samples,"%i",&buffer) != EOF)
   {
