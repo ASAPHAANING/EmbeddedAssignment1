@@ -1,4 +1,8 @@
 $option "vcd"
+$option "profile_toggle_alledge"
+$option "toggle_include_CoPro"
+$option "profile_display_operations"
+
 
 dp controller(in stall, Z, N : ns(1);
         in inst : ns(32);
@@ -12,7 +16,9 @@ dp controller(in stall, Z, N : ns(1);
         )
 {
   //sig PCenable : ns(2);
+
   always{
+    $display($dec, " ");
     pcen = ((inst[28:31]==0b1001) | (inst[28:31]==0b0111 & Z == 1) | 
          (inst[28:31]== 0b1000 & Z == 0 & N ==0)|(inst[28:31]==0b1010 & (Z==1 | N==1)))? 0b1 : 0b0;
     jumpdes = inst[0:4]-1;
@@ -41,7 +47,7 @@ dp PC(in stall, countEn : ns(1);
 {
 reg r1 : ns(5);
 always{
-  $display($dec, "r1 = ", r1, " stall = ", stall);
+  $display($dec, "PC = ", r1, " stall = ", stall);
   r1 = (countEn == 0b1)?jumpdes:
     // ((r1 == 1 & stall == 0) | (r1 == 3 & stall == 0) | (r1 == 6 & stall == 0) | (r1 == 17 & stall == 0))? r1 : r1+1;
   ((r1 ==0 & stall == 0) | (r1 == 2 & stall == 0))? r1 : r1+1;
@@ -194,9 +200,9 @@ $trace(instmem_out, "Hans5.txt");
 
   always{
 
-  $display($dec, "Cycle: ", $cycle, ", output regA = ", out_a, ", output regB = ", bmuxout, ", PCout= ", pc_out, " pcen= ", pc_in," outZ= ", out_z, " out_n= ", out_n, " muxen = ", muxen1, " outmux = ", storedata1, " R = ", out_r); 
+  $display($dec, "Cycle: ", $cycle," toggle: ", $toggle);//, ", output regA = ", out_a, ", output regB = ", bmuxout, ", PCout= ", pc_out, " pcen= ", pc_in," outZ= ", out_z, " out_n= ", out_n, " muxen = ", muxen1, " outmux = ", storedata1, " R = ", out_r); 
   //$display($dec, "Cycle: ", $cycle, ", PCtoIM= ", pc_out, " pcen= ", pc_in,  " R = ", out_r); 
-  $display($bin,  " instmem_out= ", instmem_out, " storereg = ", storesel1, " asel = ", asel1, " bsel = ", bsel1);// note : For debuging purposes.
+  $display($bin,  " instmem_out= ", instmem_out);// note : For debuging purposes.
     //asel1=0b001; 
     //bsel1=0b010; 
     //storesel1=0b001; 
@@ -234,8 +240,8 @@ dp CPU(
        $trace(M_datainrdy, "traces/M_datainrdy.seq");
       use instructionFetch(M_dataoutrdy, M_dataout, read_write_en, regfileb, aluoutr);
        always{
-          $display($dec, "Cycle: ", $cycle, ", M_datain= ", M_datain, " M_cmd= ", M_cmd, " M_datainrdy = ", M_datainrdy, " M_dataout= ", M_dataout, " M_dataoutrdy= ", M_dataoutrdy); 
-          $display($bin, "M_cmd = ", M_cmd, " R = ", M_datain, " B = ", regfileb);
+          $display($dec, "M_datain= ", M_datain, " M_datainrdy = ", M_datainrdy, " M_dataout= ", M_dataout, " M_dataoutrdy= ", M_dataoutrdy); 
+          //$display($bin, "M_cmd = ", M_cmd, " R = ", M_datain, " B = ", regfileb);
           M_datain = (read_write_en[0:0] == 0 | read_write_en[0:1]==0b01)?aluoutr: regfileb;
           //rd_wr = (counter < 8 & rd_wr == 0)? 0 :
             //      (rd_wr == 1)? 0 : 1;
@@ -1052,7 +1058,7 @@ dp CoPro(
    $trace(dataout, "traces/dataout.seq");
    $trace(dataoutrdy, "traces/dataoutrdy.seq");
    $trace(stallr, "traces/stallr.seq");
-
+   
    always{
        stallr = stall;
        addA = datain;
