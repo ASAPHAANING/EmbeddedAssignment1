@@ -1,0 +1,208 @@
+$option "vcd"
+
+
+dp controller(	in Z, N : ns(1);
+				in inst : ns(32);
+				out pcen : ns(1);
+				out jumpdes : ns(5);
+				out muxen, bmuxen : ns(1); //storeenable, muxenable : ns(1);
+				out storesel, asel, bsel : ns(3);
+				out muxdata : ns(32);
+				out alusel : ns(2);
+				out storeenable : ns(1)
+				)
+{
+	//sig PCenable : ns(2);
+	always{
+		pcen = ((inst[28:31]==0b1001) | (inst[28:31]==0b0111 & Z == 1) | 
+			   (inst[28:31]== 0b1000 & Z == 0 & N ==0)|(inst[28:31]==0b1010 & (Z==1 | N==1)))? 0b1 : 0b0;
+		jumpdes = inst[0:4]-1;
+		storesel = inst[25:27];
+		asel = inst[22:24];
+		bsel = inst[19:21];
+		muxdata = inst[9:18];
+		muxen = (inst[28:31]==0b0001 | inst[28:31]==0b0011)?0b0: 0b1;
+		bmuxen = (inst[9:18]==0b0000000000)?0b0:0b1;
+		alusel = (inst[28:31]==0b0010 | inst[28:31]==0b0101 | inst[28:31]==0b0111)? 0b00 : 
+				(inst[28:31]== 0b0100 | inst[28:31]==0b0110 | inst[28:31]==0b0001 | inst[28:31]==0b0011)? 0b01 : 0b10;
+		storeenable = (inst[25:27]==0b000)? 0 :1;
+		
+
+	}
+}
+
+
+
+dp PC(in stall, countEn : ns(1);
+		in jumpdes : ns(5);
+		out pc_out : ns(5))
+{
+reg r1 : ns(5);
+always{
+	$display($dec, "r1 = ", r1, " stall = ", stall);
+	r1 = (countEn == 0b1)?jumpdes:
+		 (r1 == 1 & stall == 0)? r1 : r1+1;
+	//(countEn == 0b10)? 0xb :
+	//(countEn == 0b01)? 0xa : 
+	pc_out = r1;
+}
+}
+
+ipblock instmem(in address : ns(5);
+                in wr,rd   : ns(1);
+                in idata   : ns(32);
+                out odata  : ns(32))
+	{
+    iptype "ram";
+    ipparm "size=34";
+    ipparm "wl=32";
+    ipparm "file=program.txt";
+	}
+
+// Hvis data skal forsinkes, i forhold til hvornår det er klar til at modtage data, skal IR bruges.
+// dp IR(in inst : ns(32);
+//		out hold : ns(32))
+//{
+//	always
+//}
+
+dp dataMux32(in R, inp : ns(32);
+		in en : ns(1);
+			out storedata : ns(32))
+{
+// todo : Insert code here!
+always{
+	storedata=(en==1)? R : inp;
+}
+}
+
+dp bMux32(in addsub, bin : ns(32);
+		in en : ns(1);
+			out bout : ns(32))
+{
+// todo : Insert code here!
+always{
+	bout=(en==1)? addsub: bin;
+				
+}
+}
+
+dp RegisterFile(in ase1, bse1, storesel : ns(3);
+		in storeenable : ns(1);
+		in storedata : tc(32);
+		out a, b : tc(32))
+{
+reg adr1, adr2, adr3, adr4, adr5, adr6, adr7, adr8 : tc(32); 
+$trace(storeenable, "Hans.txt");
+$trace(adr2, "adr2.txt");
+$trace(adr3, "adr3.txt");
+$trace(adr4, "adr4.txt");
+$trace(adr5, "adr5.txt");
+$trace(adr6, "adr6.txt");
+$trace(adr7, "adr7.txt");
+$trace(adr8, "adr8.txt");
+//$trace(a, "a_file.txt");
+always{
+	adr1 = 0;
+	adr2 = ((storeenable==1) & (storesel==0b001))?storedata : adr2;
+	adr3 = ((storeenable==1) & (storesel==0b010))?storedata : adr3;
+	adr4 = ((storeenable==1) & (storesel==0b011))?storedata : adr4;
+	adr5 = ((storeenable==1) & (storesel==0b100))?storedata : adr5;
+	adr6 = ((storeenable==1) & (storesel==0b101))?storedata : adr6;
+	adr7 = ((storeenable==1) & (storesel==0b110))?storedata : adr7;
+	adr8 = ((storeenable==1) & (storesel==0b111))?storedata : adr8;
+
+	a = (ase1==0b001)? adr2 :
+		(ase1==0b010)? adr3 :
+		(ase1==0b011)? adr4 :
+		(ase1==0b100)? adr5 :
+		(ase1==0b101)? adr6 :
+		(ase1==0b110)? adr7 :
+		(ase1==0b111)? adr8 : adr1;
+
+	b = (bse1==0b001)? adr2 :
+		(bse1==0b010)? adr3 :
+		(bse1==0b011)? adr4 :
+		(bse1==0b100)? adr5 :
+		(bse1==0b101)? adr6 :
+		(bse1==0b110)? adr7 :
+		(bse1==0b111)? adr8 : adr1;
+
+}
+
+}
+
+dp ALU32(in A, B : tc(32);
+		in sel : ns(2);
+		out Z, N : ns(1);
+			out R : tc(32))
+{
+// todo : Insert code here!
+//$trace(A, "aluA.txt");
+//$trace(B, "aluB.txt");
+//$trace(R, "aluR.txt");
+always{
+	R=(sel==0b00)?A-B:
+	(sel==0b01)?A+B:
+	(sel==0b10)?A:
+	(sel==0b11)?B: 111;
+	Z = (R==0)?1:0;
+	N = R[32];
+}
+
+}
+
+dp instructionFetch{
+	
+
+	sig asel1, bsel1 : ns(3);
+	reg rd, wr, id, stall1 : ns(1);
+	reg input : ns(32);
+	sig out_a, out_b, out_r, instmem_out, bmuxout : tc(32);
+	sig sel1 : ns(2);
+	sig out_z, out_n, storeenable1, muxen1, bmuxen1 : ns(1);
+	sig pc_in :ns(1); 
+	sig pc_out: ns(5);
+	sig storesel1: ns(3);
+	sig muxdata1, storedata1: ns(32);
+	sig jumpdes1: ns(5);
+//$trace(asel1, "Hans6.txt");
+//$trace(bsel1, "Hans1.txt");
+//$trace(out_a, "Hans2.txt");
+//$trace(out_b, "Hans3.txt");
+//$trace(out_r, "Hans4.txt");
+//$trace(instmem_out, "Hans5.txt");
+
+	use controller(out_z, out_n, instmem_out, pc_in, jumpdes1, muxen1, bmuxen1, storesel1, asel1, bsel1, muxdata1,sel1, storeenable1);
+	use PC(stall1, pc_in, jumpdes1, pc_out);
+	use instmem(pc_out, wr, rd, id, instmem_out);
+	use dataMux32(out_r, input, muxen1, storedata1);
+	use bMux32(muxdata1, out_b, bmuxen1, bmuxout);
+	//use IR();
+	use RegisterFile(asel1, bsel1, storesel1,storeenable1,storedata1, out_a, out_b);
+	use ALU32(out_a, bmuxout, sel1, out_z, out_n, out_r);
+
+	always{
+
+	$display($dec, "Cycle: ", $cycle, ", output regA = ", out_a, ", output regB = ", bmuxout, ", PCout= ", pc_out, " pcen= ", pc_in," outZ= ", out_z, " out_n= ", out_n, " outmux = ", storedata1, " R = ", out_r); 
+	//$display($dec, "Cycle: ", $cycle, ", PCtoIM= ", pc_out, " pcen= ", pc_in,  " R = ", out_r); 
+	$display($bin,  " instmem_out= ", instmem_out, " storereg = ", storesel1, " asel = ", asel1, " bsel = ", bsel1);// note : For debuging purposes.
+    //asel1=0b001; 
+    //bsel1=0b010; 
+    //storesel1=0b001; 
+    //storeenable1=1; 
+    input=6;
+    rd = 1;
+    wr = 0;
+    stall1 = 1;
+    //pc_in =1;
+	}
+}
+
+system PCsystem
+{
+   instructionFetch;
+}
+
+
+

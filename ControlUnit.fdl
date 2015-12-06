@@ -1,0 +1,56 @@
+
+dp PC(out pc_out : ns(5);
+	  out re_out : ns(1))
+{
+reg r1 : ns(5);
+always  {
+		pc_out = r1;
+		r1 = r1+1;
+		}
+}
+
+
+ipblock instmem(in address : ns(5);
+                in wr,rd   : ns(1);
+                in idata   : ns(32);
+                out odata  : ns(32))
+	{
+    iptype "ram";
+    ipparm "size=512";
+    ipparm "wl=32";
+    ipparm "file=RAM.txt";
+	}
+
+
+
+dp instructionFetch{
+
+
+	reg count : ns(3);
+	//sig a : ns(5);
+	sig wr : ns(1);
+	sig id : ns(32);
+	sig od : ns(32);
+	sig re : ns(1);
+	sig adr : ns(5);
+
+	use instmem(adr,wr,re,id,od);
+	use PC(adr, re);
+
+	always{
+
+	$display($dec, "Cycle: ", $cycle, "Adr: ", adr); // note : For debuging purposes.
+    $display($hex, "od:", od); // note : For debugging purposes.
+
+
+		wr=0;
+		id =0;
+
+	}
+}
+
+system CPUsys
+{
+	instructionFetch;
+}
+

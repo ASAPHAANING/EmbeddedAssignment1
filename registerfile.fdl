@@ -1,0 +1,63 @@
+dp registerFile(in asel, bsel, storesel : ns(3);
+				in storeenable : ns(1);
+				in storedata   : ns(32);
+				out a,b : tc(32))
+{
+	reg r1, r2,r3, r4, r5, r6, r7, r8 : ns(32);
+	always {
+		        r1 = (storesel == 0b000) ? 0 : 0;
+				r2 = (storeenable & storesel == 0b001) ? storedata : r2;
+				r3 = (storeenable & storesel == 0b010) ? storedata : r3;
+				r4 = (storeenable & storesel == 0b011) ? storedata : r4;
+				r5 = (storeenable & storesel == 0b100) ? storedata : r5;
+				r6 = (storeenable & storesel == 0b101) ? storedata : r6;
+				r7 = (storeenable & storesel == 0b110) ? storedata : r7;
+				r8 = (storeenable & storesel == 0b111) ? storedata : r8;
+
+				l :
+					(asel == 0b001) ? r2 :
+					(asel == 0b010) ? r3 :
+					(asel == 0b011) ? r4 :
+					(asel == 0b100) ? r5 :
+					(asel == 0b011) ? r6 :
+					(asel == 0b101) ? r7 :
+					(asel == 0b111) ? r8 : 0;
+
+				b = (bsel == 0b000) ? r1 :
+					(bsel == 0b001) ? r2 :
+					(bsel == 0b010) ? r3 :
+					(bsel == 0b011) ? r4 :
+					(bsel == 0b100) ? r5 :
+					(bsel == 0b011) ? r6 :
+					(bsel == 0b101) ? r7 :
+					(bsel == 0b111) ? r8 : 0;
+	}
+}
+dp testRegister(out asel, bsel, storesel:ns(3);
+	out storeenable : ns(1);
+	out storedata : tc(32);
+	in a,b 			: tc(32))
+{
+	always{
+		$display($dec, "Cycle:", $cycle, ", asel=", asel , ", bsel=", bsel , ", storeenable=", storeenable, " storedata=", storedata, " a=", a, " b=", b);
+	}
+	sfg test_0 { asel=0b000; bsel=0b000; storesel=0b001; storeenable=1; storedata=6;}
+	sfg test_1 { asel=0b001; bsel=0b000; storesel=0b001; storeenable=1; storedata=5;}
+	sfg test_2 { asel=0b001; bsel=0b000; storesel=0b000; storeenable=0; storedata=4;}
+	sfg test_3 { asel=0b000; bsel=0b000; storesel=0b000; storeenable=0; storedata=3;}
+}
+// note : State machine to control the adder testbench.
+fsm f_testbench(testRegister) {
+	initial s0;
+	// begin with state s0
+	state s1, s2, s3;
+	// other states are: s1, s2
+	@s0 (test_0) -> s1; // run test_0 and go to s1
+	@s1 (test_1) -> s2; // run test_1 and go to s2
+	@s2 (test_2) -> s3; // run test_2 and go to s2
+	@s3 (test_3) -> s0; // run test_3 and go to s0
+}
+system myFirstSystem {
+	registerFile(asel, bsel, storesel, storeenable, storedata, a, b);
+	testRegister(asel, bsel, storesel, storeenable, storedata, a, b);
+}

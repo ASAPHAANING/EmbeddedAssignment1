@@ -1,0 +1,70 @@
+//$option "debug"
+$option "vcd"
+dp RegisterFile(in ase1, bse1, storesel : ns(3);
+		in storeenable : ns(1);
+		in storedata : tc(32);
+		out a, b : tc(32))
+{
+// todo : Insert code here!
+reg adr1, adr2, adr3, adr4, adr5, adr6, adr7, adr8 : tc(32); 
+$trace(storeenable, "Hans.txt");
+$trace(adr2, "adr2.txt");
+$trace(a, "a_file.txt");
+always{
+	adr1 = 0;
+	adr2 = ((storeenable==1) & (storesel==0b001))?storedata : adr2;
+	adr3 = ((storeenable==1) & (storesel==0b010))?storedata : adr3;
+	adr4 = ((storeenable==1) & (storesel==0b011))?storedata : adr4;
+	adr5 = ((storeenable==1) & (storesel==0b100))?storedata : adr5;
+	adr6 = ((storeenable==1) & (storesel==0b101))?storedata : adr6;
+	adr7 = ((storeenable==1) & (storesel==0b110))?storedata : adr7;
+	adr8 = ((storeenable==1) & (storesel==0b111))?storedata : adr8;
+
+	a = (ase1==0b001)? adr2 :
+		(ase1==0b010)? adr3 :
+		(ase1==0b011)? adr4 :
+		(ase1==0b100)? adr5 :
+		(ase1==0b101)? adr6 :
+		(ase1==0b110)? adr7 :
+		(ase1==0b111)? adr8 : adr1;
+
+	b = (bse1==0b001)? adr2 :
+		(bse1==0b010)? adr3 :
+		(bse1==0b011)? adr4 :
+		(bse1==0b100)? adr5 :
+		(bse1==0b101)? adr6 :
+		(bse1==0b110)? adr7 :
+		(bse1==0b111)? adr8 : adr1;
+
+}
+
+}
+dp testRegisterFile(out ase1, bse1, storesel : ns(3);
+		out storeenable : ns(1);
+		out storedata : tc(32);
+		in a, b : tc(32))
+{
+always{
+$display($dec, "Cycle:", $cycle, ", a=", a , ", b=", b ,", storeenable=", storeenable);
+}
+sfg test_0 { storesel=0b001; storeenable=1; storedata=2; ase1=0b001; bse1=000; }
+sfg test_1 { storesel=0b101; storeenable=1; storedata=3; ase1=0b001; bse1=000; }
+sfg test_2 { storesel=0b111; storeenable=0; storedata=4; ase1=0b101; bse1=001; }
+sfg test_3 { storesel=0b001; storeenable=1; storedata=5; ase1=0b111; bse1=101; }
+} 
+// note : State machine to control the mux testbench.
+fsm f_testbench(testRegisterFile)
+{
+initial s0; // begin with state s0
+state s1, s2, s3; // other states are: s1, s2
+@s0 (test_0) -> s1; // run test_0 and go to s1
+@s1 (test_1) -> s2; // run test_1 and go to s2
+@s2 (test_2) -> s3;
+@s3 (test_3) -> s0;// run test_2 and go to s0
+}
+
+system myFirstSystem
+{
+RegisterFile(a, b, storeenable, ase1, bse1, storesel, storedata);
+testRegisterFile(a, b, storeenable, ase1, bse1, storesel, storedata);
+}

@@ -1,0 +1,36 @@
+dp Mux32(in A, B : ns(32);
+		in en : ns(1);
+			out R : ns(32))
+{
+// todo : Insert code here!
+always{
+	R=(en==0)?A:B;
+}
+
+}
+dp testMux32(out A, B:tc(32);
+			out en : ns(1);
+			in R:tc(32))
+{
+always{
+$display($dec, "Cycle:", $cycle, ", A=", A , ", B=", B ,", en=", en, ", R=", R);
+}
+sfg test_0 { A=3; B=6; en=1; }
+sfg test_1 { A=23; B=17; en=0; }
+sfg test_2 { A=12; B=0; en=1; }
+}
+// note : State machine to control the mux testbench.
+fsm f_testbench(testMux32)
+{
+initial s0; // begin with state s0
+state s1, s2; // other states are: s1, s2
+@s0 (test_0) -> s1; // run test_0 and go to s1
+@s1 (test_1) -> s2; // run test_1 and go to s2
+@s2 (test_2) -> s0; // run test_2 and go to s0
+}
+
+system myFirstSystem
+{
+Mux32(A, B, en, R);
+testMux32(A, B, en, R);
+}
